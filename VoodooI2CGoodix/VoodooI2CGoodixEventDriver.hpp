@@ -34,12 +34,17 @@
 #include "../../../Dependencies/helpers.hpp"
 
 #define FINGER_LIFT_DELAY   30
-#define CLICK_DELAY         150
-#define RIGHT_CLICK_DELAY   600
+#define CLICK_DELAY         60
+#define LONG_PRESS_DELAY   600
+#define DOUBLE_CLICK_INTERVAL 300000000
+#define MULTI_INTERVAL 50000000
+#define DOUBLE_CLICK_TOLERANCE_X 90
+#define DOUBLE_CLICK_TOLERANCE_Y 60
 #define HOVER       0x0
 #define LEFT_CLICK  0x1
 #define RIGHT_CLICK 0x2
 #define DRAG        0x5
+#define FORCE_TOUCH 0xA
 
 //#define GOODIX_EVENT_DRIVER_DEBUG
 
@@ -197,11 +202,19 @@ class EXPORT VoodooI2CGoodixEventDriver : public IOHIDEventService {
     /* Dispatch a click if we're supposed to
      */
     void checkForClick();
+    
+    void scheduleDelayClick();
+    void delayClick();
+    
+    void scheduleForceTouch();
+    void forceTouch();
 
 private:
     IOWorkLoop *work_loop;
     IOTimerEventSource *liftTimerSource;
     IOTimerEventSource *clickTimerSource;
+    IOTimerEventSource *delayClickTimerSource;
+    IOTimerEventSource *forceTouchTimerSource;
     IOFramebuffer* activeFramebuffer = NULL;
 
     UInt8 currentRotation;
@@ -211,12 +224,21 @@ private:
 
     UInt16 nextLogicalX = 0;
     UInt16 nextLogicalY = 0;
+    UInt16 previousConfirmedClickX=0;
+    UInt16 previousConfirmedClickY=0;
+    UInt16 previousMultiX[10]={0,0,0,0,0,0,0,0,0,0};
+    UInt16 previousMultiY[10]={0,0,0,0,0,0,0,0,0,0};
+    UInt16 initialMultiX[10]={0,0,0,0,0,0,0,0,0,0};
+    UInt16 initialMultiY[10]={0,0,0,0,0,0,0,0,0,0};
     UInt8 currentInteractionType = LEFT_CLICK;
     bool fingerDown = false;
     bool isMultitouch = false;
+    bool isDoubleClick=false;
     UInt64 fingerDownStart = 0;
-
+    UInt64 previousConfirmedClickNanoseconds = 0;
+    UInt64 previousMultiNanoseconds = 0;
     UInt8 stylusTransducerID;
+    UInt8 previousMultiPoint = 0;
 
     bool scrollStarted = false;
 };
